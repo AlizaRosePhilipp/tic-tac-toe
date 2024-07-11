@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <style>
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .message {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="board" id="board">
+        <div class="cell" data-position="0"></div>
+        <div class="cell" data-position="1"></div>
+        <div class="cell" data-position="2"></div>
+        <div class="cell" data-position="3"></div>
+        <div class="cell" data-position="4"></div>
+        <div class="cell" data-position="5"></div>
+        <div class="cell" data-position="6"></div>
+        <div class="cell" data-position="7"></div>
+        <div class="cell" data-position="8"></div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize game state
+            let game_id = null;
+            let current_turn = 'X';  // Starting with 'X'
+
+            // Fetch game state from server
+            function fetchGameState() {
+                fetch(`/api/game/${game_id}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderBoard(data.board);
+                        renderMessage(data.current_turn, data.winner);
+                    })
+                    .catch(error => console.error('Error fetching game state:', error));
+            }
+
+            // Render game board
+            function renderBoard(boardString) {
+                const cells = document.querySelectorAll('.cell');
+                for (let i = 0; i < cells.length; i++) {
+                    cells[i].innerText = boardString[i];
+                    cells[i].addEventListener('click', function() {
+                        makeMove(i);
+                    });
+                }
+            }
+
+            // Render message
+            function renderMessage(currentTurn, winner) {
+                const messageElement = document.getElementById('message');
+                if (winner) {
+                    messageElement.innerText = `Winner: ${winner}`;
+                } else {
+                    messageElement.innerText = `Current Turn: ${currentTurn}`;
+                }
+            }
+
+            // Start a new game
+            function startNewGame() {
+                fetch('/api/game/start/', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        game_id = data.game_id;
+                        fetchGameState();
+                    })
+                    .catch(error => console.error('Error starting new game:', error));
+            }
+
+            // Make a move
+            function makeMove(position) {
+                if (!game_id) {
+                    console.error('Game ID is missing.');
+                    return;
+                }
+
+                fetch('/api/game/move/', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        game_id: game_id,
+                        position: position
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        fetchGameState();  // Refresh game state after move
+                    } else {
+                        console.error('Move unsuccessful.');
+                    }
+                })
+                .catch(error => console.error('Error making move:', error));
+            }
+
+            // Initialize game when the page loads
+            startNewGame();
+        });
+    </script>
+</body>
+</html>

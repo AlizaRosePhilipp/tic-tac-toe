@@ -18,10 +18,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from tictactoe.quickstart import views
+from tictactoe.quickstart.views import (GameMoveView, GameStartView,
+                                        GameStateView)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('game_board/', views.game_board, name='game_board'),
-    path('make_move/', views.make_move, name='make_move'),
+    path('', GameStartView.as_view(), name='game_start'), 
+    path('api/game/start/', GameStartView.as_view(), name='game_start'),
+    path('api/game/move/', GameMoveView.as_view(), name='game_move'),
+    path('api/game/<int:game_id>/', GameStateView.as_view(), name='game_state'),
 ]
